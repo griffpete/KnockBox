@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Knock Box API Server
 
-## Getting Started
+Backend API server for Knock Box - a VR door-to-door training application.
 
-First, run the development server:
+## Overview
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This Next.js API server provides:
+- **VR Chatbot Communication** - Handles AI conversations during VR training sessions
+- **Progress Tracking** - Manages user progress data for the React Native app
+- **Session Management** - Tracks VR training sessions and scenarios
+- **Supabase Integration** - Database operations for all application data
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Health Check
+- `GET /api/health` - Server health status
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### VR Chatbot
+- `POST /api/vr/chatbot` - Send message to AI chatbot
+- `GET /api/vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
 
-## Learn More
+### Progress Tracking
+- `GET /api/progress?userId=xxx` - Get user progress
+- `POST /api/progress` - Save session data and update progress
 
-To learn more about Next.js, take a look at the following resources:
+### Session Management
+- `GET /api/sessions?userId=xxx&limit=10` - Get user sessions
+- `POST /api/sessions` - Create new VR session
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## Deploy on Vercel
+2. **Configure environment variables:**
+   Create a `.env.local` file with:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   CHATBOT_API_KEY=your_chatbot_api_key
+   CHATBOT_API_URL=your_chatbot_service_url
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Set up Supabase database:**
+   Create the following tables in your Supabase project:
+   - `vr_sessions` - VR training sessions
+   - `conversations` - Chatbot conversations
+   - `user_progress` - User progress tracking
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+The API will be available at `http://localhost:3000/api`
+
+## Database Schema
+
+### vr_sessions
+- `id` (uuid, primary key)
+- `user_id` (uuid, foreign key)
+- `scenario_id` (string)
+- `difficulty` (enum: easy, medium, hard)
+- `status` (enum: active, completed, abandoned)
+- `start_time` (timestamp)
+- `end_time` (timestamp, nullable)
+- `score` (integer, nullable)
+- `time_spent` (integer, nullable)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### conversations
+- `id` (uuid, primary key)
+- `session_id` (uuid, foreign key)
+- `user_id` (uuid, foreign key)
+- `message` (text)
+- `response` (text)
+- `timestamp` (timestamp)
+- `created_at` (timestamp)
+
+### user_progress
+- `id` (uuid, primary key)
+- `user_id` (uuid, foreign key)
+- `total_sessions` (integer)
+- `completed_scenarios` (integer)
+- `average_score` (float)
+- `current_level` (integer)
+- `total_time_spent` (integer)
+- `achievements` (json array)
+- `last_session_date` (timestamp, nullable)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+## Architecture
+
+- **Next.js App Router** - Modern routing and API structure
+- **TypeScript** - Type safety throughout the application
+- **Supabase** - Database and real-time features
+- **Tailwind CSS** - Minimal styling for the landing page
+- **ESLint** - Code quality and consistency
+
+## Development
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
