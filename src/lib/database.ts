@@ -2,6 +2,11 @@ import { supabase, type VRSession, type Conversation, type UserProgress } from '
 
 // VR Session operations
 export async function createVRSession(sessionData: Omit<VRSession, 'id' | 'created_at' | 'updated_at'>) {
+  // Check if Supabase is properly configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+    throw new Error('Supabase not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  }
+
   const { data, error } = await supabase
     .from('vr_sessions')
     .insert([sessionData])
@@ -38,6 +43,12 @@ export async function updateVRSession(sessionId: string, updates: Partial<VRSess
 
 // Conversation operations
 export async function saveConversation(conversationData: Omit<Conversation, 'id' | 'created_at'>) {
+  // Check if Supabase is properly configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+    console.warn('Supabase not configured. Conversation not saved to database.');
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('conversations')
     .insert([conversationData])
@@ -49,6 +60,12 @@ export async function saveConversation(conversationData: Omit<Conversation, 'id'
 }
 
 export async function getConversations(sessionId: string) {
+  // Check if Supabase is properly configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+    console.warn('Supabase not configured. Returning empty conversation history.');
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('conversations')
     .select('*')

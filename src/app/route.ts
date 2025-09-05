@@ -8,7 +8,7 @@ export async function GET() {
     status: 'running',
     endpoints: {
       health: 'GET /health',
-      chatbot: 'POST /vr/chatbot',
+      aiChatbot: 'POST /vr/chatbot',
       progress: 'GET /progress',
       sessions: 'GET /sessions'
     },

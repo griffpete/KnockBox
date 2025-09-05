@@ -5,7 +5,7 @@ Pure backend API server for Knock Box - a VR door-to-door training application.
 ## Overview
 
 This Next.js API-only server provides:
-- **VR Chatbot Communication** - Handles AI conversations during VR training sessions
+- **AI Chatbot Communication** - Handles OpenAI-powered conversations during VR training sessions
 - **Progress Tracking** - Manages user progress data for the React Native app
 - **Session Management** - Tracks VR training sessions and scenarios
 - **Supabase Integration** - Database operations for all application data
@@ -18,19 +18,19 @@ This Next.js API-only server provides:
 - `GET /` - API server information and available endpoints
 
 ### Health Check
-- `GET /api/health` - Server health status
+- `GET /health` - Server health status
 
-### VR Chatbot
-- `POST /api/vr/chatbot` - Send message to AI chatbot
-- `GET /api/vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
+### AI Chatbot
+- `POST /vr/chatbot` - Send message to OpenAI-powered chatbot
+- `GET /vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
 
 ### Progress Tracking
-- `GET /api/progress?userId=xxx` - Get user progress
-- `POST /api/progress` - Save session data and update progress
+- `GET /progress?userId=xxx` - Get user progress
+- `POST /progress` - Save session data and update progress
 
 ### Session Management
-- `GET /api/sessions?userId=xxx&limit=10` - Get user sessions
-- `POST /api/sessions` - Create new VR session
+- `GET /sessions?userId=xxx&limit=10` - Get user sessions
+- `POST /sessions` - Create new VR session
 
 ## Setup
 
@@ -42,11 +42,12 @@ This Next.js API-only server provides:
 2. **Configure environment variables:**
    Create a `.env.local` file with:
    ```env
+   # Supabase Configuration
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-   CHATBOT_API_KEY=your_chatbot_api_key
-   CHATBOT_API_URL=your_chatbot_service_url
+   
+   # OpenAI Configuration (REQUIRED for AI chatbot)
+   OPENAI_API_KEY=your_openai_api_key_here
    ```
 
 3. **Set up Supabase database:**
@@ -60,7 +61,7 @@ This Next.js API-only server provides:
    npm run dev
    ```
 
-The API will be available at `http://localhost:3000/api`
+The API will be available at `http://localhost:3000`
 
 ## Database Schema
 
