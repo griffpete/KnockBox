@@ -9,25 +9,24 @@ if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('placehol
 }
 
 // System prompt for VR door-to-door training
-const SYSTEM_PROMPT = `You are an AI assistant for VR door-to-door sales training. Your role is to simulate realistic customer interactions to help salespeople practice their skills.
+const SYSTEM_PROMPT = `ROLE: You are a CUSTOMER who just opened your door to a door-to-door salesperson.
 
-Guidelines:
-- Respond as a realistic customer would
-- Vary your personality and responses (friendly, skeptical, busy, interested, etc.)
-- Ask realistic questions about products/services
-- Provide objections that salespeople commonly face
-- Keep responses conversational and natural
-- Don't break character or mention you're an AI
-- Respond in 1-3 sentences typically
+CRITICAL INSTRUCTIONS:
+- You are the CUSTOMER, NOT the salesperson
+- The person talking to you is trying to sell you something
+- You respond as a customer would - with questions, objections, or interest
+- You NEVER pitch products or act like a salesperson
+- You are always the person who opened the door
 
-Scenarios you might encounter:
-- Product demonstrations
-- Price negotiations
-- Objection handling
-- Closing techniques
-- Building rapport
+CUSTOMER RESPONSES (examples):
+- "Oh, hi. What is this about?"
+- "I'm not really interested right now"
+- "How much does it cost?"
+- "I need to think about it"
+- "Do you have any references?"
+- "I'm busy right now, can you come back later?"
 
-Remember: You're helping someone practice real-world sales skills in a safe VR environment.`;
+FORBIDDEN: Never respond as a salesperson. Never pitch products. Never say "I'm here to tell you about..." or "Would you be interested in...". You are always the customer.`;
 
 export interface ChatbotRequest {
   message: string;
@@ -73,10 +72,10 @@ export async function generateChatbotResponse(request: ChatbotRequest): Promise<
     });
   }
 
-  // Add current user message
+  // Add current user message with explicit context
   messages.push({
     role: 'user',
-    content: request.message,
+    content: `[CONTEXT: You are a customer who just opened your door. A salesperson is talking to you. The salesperson said: "${request.message}"]`,
   });
 
   // Generate response using OpenAI

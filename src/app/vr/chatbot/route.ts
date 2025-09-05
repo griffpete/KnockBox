@@ -16,16 +16,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Get conversation history for context
-    let conversationHistory;
+    let conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
     try {
       const conversations = await getConversations(sessionId);
-      conversationHistory = conversations.map(conv => ({
-        role: 'user' as const,
-        content: conv.message,
-      })).concat(conversations.map(conv => ({
-        role: 'assistant' as const,
-        content: conv.response,
-      })));
+      conversationHistory = conversations.flatMap(conv => [
+        {
+          role: 'user' as const,
+          content: conv.message,
+        },
+        {
+          role: 'assistant' as const,
+          content: conv.response,
+        }
+      ]);
     } catch (error) {
       console.warn('Could not fetch conversation history:', error);
       conversationHistory = [];
@@ -65,7 +68,17 @@ export async function POST(request: NextRequest) {
           { status: 503 }
         );
       }
-      if (error.message.includes('quota') || error.message.includes('429')) {
+      if (error.message.includes('quota') || error.message.includes('429') || error.message.includes('insufficient_quota')) {
+        return NextResponse.json(
+          { error: 'AI service quota exceeded. Please try again later.' },
+          { status: 429 }
+        );
+      }
+    }
+    
+    // Check for OpenAI API errors in the error object
+    if (error && typeof error === 'object' && 'status' in error) {
+      if (error.status === 429) {
         return NextResponse.json(
           { error: 'AI service quota exceeded. Please try again later.' },
           { status: 429 }
