@@ -8,6 +8,8 @@ if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('placehol
   });
 }
 
+//remove me!
+
 // System prompt for VR door-to-door training
 const SYSTEM_PROMPT = `ROLE: You are a CUSTOMER who just opened your door to a door-to-door salesperson.
 
