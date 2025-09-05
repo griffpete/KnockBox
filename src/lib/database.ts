@@ -1,5 +1,12 @@
 import { supabase, type VRSession, type Conversation, type UserProgress } from './supabase';
 
+// In-memory storage for development (when Supabase not configured)
+const memoryStorage = {
+  conversations: new Map<string, Array<Conversation>>(),
+  sessions: new Map<string, VRSession>(),
+  progress: new Map<string, UserProgress>()
+};
+
 // VR Session operations
 export async function createVRSession(sessionData: Omit<VRSession, 'id' | 'created_at' | 'updated_at'>) {
   // Check if Supabase is properly configured
@@ -45,8 +52,21 @@ export async function updateVRSession(sessionId: string, updates: Partial<VRSess
 export async function saveConversation(conversationData: Omit<Conversation, 'id' | 'created_at'>) {
   // Check if Supabase is properly configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-    console.warn('Supabase not configured. Conversation not saved to database.');
-    return null;
+    // Use in-memory storage for development
+    const conversation: Conversation = {
+      id: `mem_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...conversationData,
+      created_at: new Date().toISOString()
+    };
+    
+    const sessionId = conversationData.session_id;
+    if (!memoryStorage.conversations.has(sessionId)) {
+      memoryStorage.conversations.set(sessionId, []);
+    }
+    
+    memoryStorage.conversations.get(sessionId)!.push(conversation);
+    console.log(`Conversation saved to memory for session ${sessionId}`);
+    return conversation;
   }
 
   const { data, error } = await supabase
@@ -62,8 +82,10 @@ export async function saveConversation(conversationData: Omit<Conversation, 'id'
 export async function getConversations(sessionId: string) {
   // Check if Supabase is properly configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
-    console.warn('Supabase not configured. Returning empty conversation history.');
-    return [];
+    // Use in-memory storage for development
+    const conversations = memoryStorage.conversations.get(sessionId) || [];
+    console.log(`Retrieved ${conversations.length} conversations from memory for session ${sessionId}`);
+    return conversations;
   }
 
   const { data, error } = await supabase
