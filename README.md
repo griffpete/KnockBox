@@ -1,16 +1,21 @@
 # Knock Box API Server
 
-Backend API server for Knock Box - a VR door-to-door training application.
+Pure backend API server for Knock Box - a VR door-to-door training application.
 
 ## Overview
 
-This Next.js API server provides:
+This Next.js API-only server provides:
 - **VR Chatbot Communication** - Handles AI conversations during VR training sessions
 - **Progress Tracking** - Manages user progress data for the React Native app
 - **Session Management** - Tracks VR training sessions and scenarios
 - **Supabase Integration** - Database operations for all application data
 
+**Pure API Server** - No frontend UI, optimized for backend services only.
+
 ## API Endpoints
+
+### Root
+- `GET /` - API server information and available endpoints
 
 ### Health Check
 - `GET /api/health` - Server health status
@@ -96,10 +101,10 @@ The API will be available at `http://localhost:3000/api`
 
 ## Architecture
 
-- **Next.js App Router** - Modern routing and API structure
+- **Next.js App Router** - Modern API routing structure
 - **TypeScript** - Type safety throughout the application
 - **Supabase** - Database and real-time features
-- **Tailwind CSS** - Minimal styling for the landing page
+- **Pure API Server** - No frontend dependencies, optimized for backend
 - **ESLint** - Code quality and consistency
 
 ## Development
