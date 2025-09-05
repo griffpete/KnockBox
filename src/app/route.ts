@@ -7,10 +7,10 @@ export async function GET() {
     version: '1.0.0',
     status: 'running',
     endpoints: {
-      health: 'GET /api/health',
-      chatbot: 'POST /api/vr/chatbot',
-      progress: 'GET /api/progress',
-      sessions: 'GET /api/sessions'
+      health: 'GET /health',
+      chatbot: 'POST /vr/chatbot',
+      progress: 'GET /progress',
+      sessions: 'GET /sessions'
     },
     documentation: 'See README.md for detailed API documentation'
   });
