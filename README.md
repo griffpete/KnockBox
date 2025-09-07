@@ -6,6 +6,7 @@ Pure backend API server for Knock Box - a VR door-to-door training application.
 
 This Next.js API-only server provides:
 - **AI Chatbot Communication** - Handles OpenAI-powered conversations during VR training sessions
+- **Audio Processing** - Speech-to-text transcription and text-to-speech conversion
 - **Progress Tracking** - Manages user progress data for the React Native app
 - **Session Management** - Tracks VR training sessions and scenarios
 - **Supabase Integration** - Database operations for all application data
@@ -23,6 +24,10 @@ This Next.js API-only server provides:
 ### AI Chatbot
 - `POST /vr/chatbot` - Send message to OpenAI-powered chatbot
 - `GET /vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
+
+### Audio Processing
+- `POST /transcribe` - Convert audio file to text using OpenAI Whisper
+- `POST /text-to-speech` - Convert text to speech using OpenAI TTS
 
 ### Progress Tracking
 - `GET /progress?userId=xxx` - Get user progress
