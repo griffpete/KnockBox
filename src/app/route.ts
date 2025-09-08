@@ -10,7 +10,9 @@ export async function GET() {
       health: 'GET /health',
       aiChatbot: 'POST /vr/chatbot',
       progress: 'GET /progress',
-      sessions: 'GET /sessions'
+      sessions: 'GET /sessions',
+      transcribe: 'POST /transcribe',
+      textToSpeech: 'POST /text-to-speech'
     },
     documentation: 'See README.md for detailed API documentation'
   });

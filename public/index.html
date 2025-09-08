@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnockBox VR Training - Audio Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .audio-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .record-button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+
+        .record-button:hover {
+            background: #ff3742;
+            transform: translateY(-2px);
+        }
+
+        .record-button.recording {
+            background: #ff6b7a;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .file-input {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .file-input input[type="file"] {
+            display: none;
+        }
+
+        .file-input label {
+            background: #3742fa;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .file-input label:hover {
+            background: #2f3542;
+        }
+
+        .audio-player {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .transcript {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+        }
+
+        .transcript h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .transcript p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .response {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 100px;
+        }
+
+        .response h3 {
+            color: #2d5a2d;
+            margin-bottom: 10px;
+        }
+
+        .response p {
+            color: #4a6741;
+            line-height: 1.6;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #3742fa;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2f3542;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 KnockBox VR Training</h1>
+            <p>Practice your door-to-door sales skills with AI</p>
+        </div>
+
+        <div class="audio-section">
+            <h2 class="section-title">Record Your Message</h2>
+            <div style="text-align: center;">
+                <button id="recordBtn" class="record-button">
+                    <span id="recordIcon">🎤</span>
+                    <span id="recordText">Start Recording</span>
+                </button>
+            </div>
+            
+            <div class="file-input">
+                <label for="audioFile">
+                    📁 Or Upload Audio File (.wav, .mp3)
+                </label>
+                <input type="file" id="audioFile" accept="audio/*">
+            </div>
+
+            <div id="audioPlayer" class="audio-player hidden">
+                <h3>Your Recording:</h3>
+                <audio id="audioElement" controls></audio>
+            </div>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+
+        <div class="transcript">
+            <h3>📝 Transcript</h3>
+            <p id="transcriptText">Your speech will be transcribed here...</p>
+        </div>
+
+        <div class="response">
+            <h3>🤖 AI Response</h3>
+            <p id="responseText">AI response will appear here...</p>
+        </div>
+
+        <div class="controls">
+            <button id="transcribeBtn" class="btn btn-primary" disabled>Transcribe Audio</button>
+            <button id="getResponseBtn" class="btn btn-primary" disabled>Get AI Response</button>
+            <button id="playResponseBtn" class="btn btn-secondary" disabled>🔊 Play Response</button>
+            <button id="clearBtn" class="btn btn-secondary">Clear All</button>
+        </div>
+    </div>
+
+    <script>
+        class AudioChat {
+            constructor() {
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                this.audioBlob = null;
+                this.transcript = '';
+                this.aiResponse = '';
+                this.audioResponseBlob = null;
+                
+                this.initializeElements();
+                this.attachEventListeners();
+            }
+
+            initializeElements() {
+                this.recordBtn = document.getElementById('recordBtn');
+                this.recordIcon = document.getElementById('recordIcon');
+                this.recordText = document.getElementById('recordText');
+                this.audioFile = document.getElementById('audioFile');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.audioElement = document.getElementById('audioElement');
+                this.status = document.getElementById('status');
+                this.transcriptText = document.getElementById('transcriptText');
+                this.responseText = document.getElementById('responseText');
+                this.transcribeBtn = document.getElementById('transcribeBtn');
+                this.getResponseBtn = document.getElementById('getResponseBtn');
+                this.playResponseBtn = document.getElementById('playResponseBtn');
+                this.clearBtn = document.getElementById('clearBtn');
+            }
+
+            attachEventListeners() {
+                this.recordBtn.addEventListener('click', () => this.toggleRecording());
+                this.audioFile.addEventListener('change', (e) => this.handleFileUpload(e));
+                this.transcribeBtn.addEventListener('click', () => this.transcribeAudio());
+                this.getResponseBtn.addEventListener('click', () => this.getAIResponse());
+                this.playResponseBtn.addEventListener('click', () => this.playResponse());
+                this.clearBtn.addEventListener('click', () => this.clearAll());
+            }
+
+            async toggleRecording() {
+                if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+                    await this.startRecording();
+                } else {
+                    this.stopRecording();
+                }
+            }
+
+            async startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        this.audioChunks.push(event.data);
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        this.audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                        this.displayAudio();
+                        this.transcribeBtn.disabled = false;
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    this.mediaRecorder.start();
+                    this.recordBtn.classList.add('recording');
+                    this.recordIcon.textContent = '⏹️';
+                    this.recordText.textContent = 'Stop Recording';
+                    this.showStatus('Recording... Click to stop.', 'loading');
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    this.showStatus('Error: Could not access microphone', 'error');
+                }
+            }
+
+            stopRecording() {
+                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.stop();
+                    this.recordBtn.classList.remove('recording');
+                    this.recordIcon.textContent = '🎤';
+                    this.recordText.textContent = 'Start Recording';
+                    this.showStatus('Recording stopped. Ready to transcribe.', 'success');
+                }
+            }
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.audioBlob = file;
+                    this.displayAudio();
+                    this.transcribeBtn.disabled = false;
+                    this.showStatus('Audio file loaded. Ready to transcribe.', 'success');
+                }
+            }
+
+            displayAudio() {
+                const audioUrl = URL.createObjectURL(this.audioBlob);
+                this.audioElement.src = audioUrl;
+                this.audioPlayer.classList.remove('hidden');
+            }
+
+            async transcribeAudio() {
+                if (!this.audioBlob) {
+                    this.showStatus('No audio to transcribe', 'error');
+                    return;
+                }
+
+                this.showStatus('Transcribing audio...', 'loading');
+                this.transcribeBtn.disabled = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('audio', this.audioBlob, 'audio.wav');
+
+                    const response = await fetch('/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    this.transcript = result.transcript;
+                    this.transcriptText.textContent = this.transcript;
+                    this.getResponseBtn.disabled = false;
+                    this.showStatus('Transcription complete!', 'success');
+                } catch (error) {
+                    console.error('Transcription error:', error);
+                    this.showStatus('Error transcribing audio', 'error');
+                } finally {
+                    this.transcribeBtn.disabled = false;
+                }
+            }
+
+            async getAIResponse() {
+                if (!this.transcript) {
+                    this.showStatus('No transcript available', 'error');
+                    return;
+                }
+
+                this.showStatus('Getting AI response...', 'loading');
+                this.getResponseBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/vr/chatbot', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: this.transcript,
+                            sessionId: 'audio-session-1',
+                            userId: 'audio-user-1'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    this.aiResponse = result.message;
+                    this.responseText.textContent = this.aiResponse;
+                    this.playResponseBtn.disabled = false;
+                    this.showStatus('AI response received!', 'success');
+                } catch (error) {
+                    console.error('AI response error:', error);
+                    this.showStatus('Error getting AI response', 'error');
+                } finally {
+                    this.getResponseBtn.disabled = false;
+                }
+            }
+
+            async playResponse() {
+                if (!this.aiResponse) {
+                    this.showStatus('No AI response to play', 'error');
+                    return;
+                }
+
+                this.showStatus('Converting to speech...', 'loading');
+                this.playResponseBtn.disabled = true;
+
+                try {
+                    const response = await fetch('/text-to-speech', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: this.aiResponse
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    audio.onended = () => {
+                        URL.revokeObjectURL(audioUrl);
+                        this.showStatus('Speech playback complete!', 'success');
+                    };
+
+                    await audio.play();
+                    this.showStatus('Playing AI response...', 'success');
+                } catch (error) {
+                    console.error('TTS error:', error);
+                    this.showStatus('Error converting to speech', 'error');
+                } finally {
+                    this.playResponseBtn.disabled = false;
+                }
+            }
+
+            clearAll() {
+                this.audioBlob = null;
+                this.transcript = '';
+                this.aiResponse = '';
+                this.audioResponseBlob = null;
+                
+                this.audioPlayer.classList.add('hidden');
+                this.transcriptText.textContent = 'Your speech will be transcribed here...';
+                this.responseText.textContent = 'AI response will appear here...';
+                
+                this.transcribeBtn.disabled = true;
+                this.getResponseBtn.disabled = true;
+                this.playResponseBtn.disabled = true;
+                
+                this.audioFile.value = '';
+                this.status.classList.add('hidden');
+            }
+
+            showStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+                this.status.classList.remove('hidden');
+            }
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            new AudioChat();
+        });
+    </script>
+</body>
+</html>
