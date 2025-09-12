@@ -34,7 +34,7 @@ export async function PATCH(
   const parsed = PatchBody.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const update: any = {};
+  const update: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) update.name = parsed.data.name;
   if (parsed.data.difficulty !== undefined) update.difficulty = parsed.data.difficulty;
   if (parsed.data.config !== undefined) update.config = parsed.data.config;
