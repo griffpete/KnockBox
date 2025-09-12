@@ -24,7 +24,7 @@ This Next.js API-only server provides:
 ### VR Audio Processing (Primary Endpoint)
 - `POST /vr/audio` - Complete VR audio workflow (audio in → audio out)
   - **Input:** Audio file (.wav, .mp3) + sessionId + userId
-  - **Output:** AI-generated audio response (.mp3)
+  - **Output:** AI-generated audio response (.mp3 format)
   - **Process:** Transcribe → AI Response → Text-to-Speech
   - **Headers:** X-Transcript, X-AI-Response (for debugging)
 
@@ -128,7 +128,7 @@ curl -X POST https://your-api.vercel.app/vr/audio \
   -F "userId=user-456"
 ```
 
-**Response:** Audio file (.mp3) with AI customer response
+**Response:** Audio file (.mp3 format) with AI customer response
 
 ### Workflow
 1. **VR System** records user speech
