@@ -5,13 +5,13 @@ Pure backend API server for Knock Box - a VR door-to-door training application.
 ## Overview
 
 This Next.js API-only server provides:
-- **AI Chatbot Communication** - Handles OpenAI-powered conversations during VR training sessions
-- **Audio Processing** - Speech-to-text transcription and text-to-speech conversion
-- **Progress Tracking** - Manages user progress data for the React Native app
+- **VR Audio Processing** - Complete audio workflow for VR door-to-door training
+- **AI Chatbot Communication** - OpenAI-powered customer simulation during VR sessions
+- **Progress Tracking** - Manages user progress data for the VR application
 - **Session Management** - Tracks VR training sessions and scenarios
 - **Supabase Integration** - Database operations for all application data
 
-**Pure API Server** - No frontend UI, optimized for backend services only.
+**Pure API Server** - Optimized for VR integration with audio-in/audio-out workflow.
 
 ## API Endpoints
 
@@ -21,13 +21,16 @@ This Next.js API-only server provides:
 ### Health Check
 - `GET /health` - Server health status
 
-### AI Chatbot
-- `POST /vr/chatbot` - Send message to OpenAI-powered chatbot
-- `GET /vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
+### VR Audio Processing (Primary Endpoint)
+- `POST /vr/audio` - Complete VR audio workflow (audio in → audio out)
+  - **Input:** Audio file (.wav, .mp3) + sessionId + userId
+  - **Output:** AI-generated audio response (.mp3)
+  - **Process:** Transcribe → AI Response → Text-to-Speech
+  - **Headers:** X-Transcript, X-AI-Response (for debugging)
 
-### Audio Processing
-- `POST /transcribe` - Convert audio file to text using OpenAI Whisper
-- `POST /text-to-speech` - Convert text to speech using OpenAI TTS
+### AI Chatbot (Alternative Text Interface)
+- `POST /vr/chatbot` - Send text message to OpenAI-powered chatbot
+- `GET /vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
 
 ### Progress Tracking
 - `GET /progress?userId=xxx` - Get user progress
@@ -112,6 +115,36 @@ The API will be available at `http://localhost:3000`
 - **Supabase** - Database and real-time features
 - **Pure API Server** - No frontend dependencies, optimized for backend
 - **ESLint** - Code quality and consistency
+
+## VR Integration
+
+### Primary VR Endpoint
+Use `POST /vr/audio` for the complete audio workflow:
+
+```bash
+curl -X POST https://your-api.vercel.app/vr/audio \
+  -F "audio=@user_speech.wav" \
+  -F "sessionId=vr-session-123" \
+  -F "userId=user-456"
+```
+
+**Response:** Audio file (.mp3) with AI customer response
+
+### Workflow
+1. **VR System** records user speech
+2. **POST /vr/audio** processes the audio:
+   - 🎤 Transcribes speech to text (Whisper)
+   - 🤖 Generates AI customer response (GPT-3.5)
+   - 🔊 Converts response to speech (TTS)
+   - 💾 Saves conversation history
+3. **VR System** receives audio response and plays it
+
+**Single API Call** - No need for multiple endpoints!
+
+### Session Management
+- Use consistent `sessionId` for conversation continuity
+- Use consistent `userId` for progress tracking
+- Conversation history is maintained automatically
 
 ## Development
 
