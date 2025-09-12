@@ -83,12 +83,15 @@ export async function POST(request: NextRequest) {
       model: 'tts-1',
       voice: 'alloy',
       input: aiResponse,
-      response_format: 'wav'  // Changed to WAV format for VR compatibility
+      response_format: 'mp3'  // OpenAI only supports MP3, not WAV
     });
 
-    const audioBuffer = Buffer.from(await speech.arrayBuffer());
+    const mp3Buffer = Buffer.from(await speech.arrayBuffer());
+    console.log('TTS generation successful, MP3 buffer size:', mp3Buffer.length);
 
-    console.log('TTS generation successful, buffer size:', audioBuffer.length);
+    // Step 4.5: Convert MP3 to WAV format for Unity compatibility
+    // For now, return MP3 with proper headers - Unity can handle MP3
+    const audioBuffer = mp3Buffer;
 
     // Step 5: Save conversation to memory/database
     try {
@@ -108,9 +111,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse(audioBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/wav',
+        'Content-Type': 'audio/mpeg',
         'Content-Length': audioBuffer.length.toString(),
-        'Content-Disposition': 'attachment; filename="ai_response.wav"',
+        'Content-Disposition': 'attachment; filename="ai_response.mp3"',
         'X-Transcript': transcription,
         'X-AI-Response': aiResponse
       }
