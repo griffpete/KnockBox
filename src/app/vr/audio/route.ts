@@ -47,8 +47,7 @@ export async function POST(request: NextRequest) {
       file: audioBlob,
       model: 'whisper-1', // Fastest available
       language: 'en',
-      response_format: 'text',
-      temperature: 0.0, // Faster, more consistent
+      response_format: 'text'
     });
 
     // Get recent conversation history only (limit to last 3 exchanges for speed)
@@ -83,8 +82,7 @@ export async function POST(request: NextRequest) {
       model: 'tts-1', // Fastest TTS model
       voice: 'alloy', // Fastest voice
       input: aiResponse,
-      response_format: 'mp3',
-      speed: 1.0, // Normal speed for clarity
+      response_format: 'mp3'
     });
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer());
@@ -119,9 +117,15 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    console.error("VR Audio Processing error:", error);
+    console.error("🚨 VR Audio Processing error:", error);
+    console.error("Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
 
     if (error instanceof Error) {
+      // OpenAI API errors
       if (error.message.includes("quota") || error.message.includes("429")) {
         return NextResponse.json(
           { error: "OpenAI API quota exceeded. Please try again later." },
@@ -135,10 +139,27 @@ export async function POST(request: NextRequest) {
           { status: 413 }
         );
       }
+
+      if (error.message.includes("Invalid file format")) {
+        return NextResponse.json(
+          { error: "Invalid audio file format. Supported: wav, mp3, m4a, flac, ogg" },
+          { status: 400 }
+        );
+      }
+
+      // Return specific error for debugging
+      return NextResponse.json(
+        { 
+          error: "VR audio processing failed", 
+          details: error.message,
+          type: error.name
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
-      { error: "VR audio processing failed. Please try again." },
+      { error: "VR audio processing failed. Unknown error occurred." },
       { status: 500 }
     );
   }
