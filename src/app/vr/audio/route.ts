@@ -3,12 +3,11 @@ import OpenAI from "openai";
 import { saveConversation, getConversations } from "@/lib/database";
 import { generateChatbotResponse } from "@/lib/chatbot";
 
-// Init OpenAI
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
-
-export const runtime = "nodejs";
+// Initialize OpenAI client
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('placeholder')) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,19 +35,25 @@ export async function POST(request: NextRequest) {
       `VR Audio Processing: ${audioFile.name}, size: ${audioFile.size} bytes, session: ${sessionId}`
     );
 
-    // 🔹 Step 1: Transcribe + fetch conversation history in parallel
-    const [transcription, conversations] = await Promise.all([
-      openai.audio.transcriptions.create({
-        model: "gpt-4o-mini-transcribe",
-        file: audioFile,
-      }),
-      getConversations(sessionId).catch((err) => {
-        console.warn("Conversation fetch failed:", err);
-        return [];
-      }),
-    ]);
+     // 🔹 Step 1: Transcribe + fetch conversation history in parallel
+     const arrayBuffer = await audioFile.arrayBuffer();
+     const buffer = Buffer.from(arrayBuffer);
+     const audioBlob = new File([buffer], audioFile.name, { type: audioFile.type });
 
-    const userMessage = transcription.text;
+     const [transcription, conversations] = await Promise.all([
+       openai.audio.transcriptions.create({
+         file: audioBlob,
+         model: 'whisper-1',
+         language: 'en',
+         response_format: 'text'
+       }),
+       getConversations(sessionId).catch((err) => {
+         console.warn("Conversation fetch failed:", err);
+         return [];
+       }),
+     ]);
+
+    const userMessage = transcription;
     console.log("Transcription successful:", userMessage);
 
     // Convert conversations to OpenAI chat format
@@ -67,12 +72,13 @@ export async function POST(request: NextRequest) {
     const aiResponse = aiResponseData.message;
     console.log("AI Response:", aiResponse);
 
-    // 🔹 Step 3: Convert response to speech
-    const speech = await openai.audio.speech.create({
-      model: "gpt-4o-mini-tts",
-      voice: "verse", // alloy, coral, sage also available
-      input: aiResponse,
-    });
+     // 🔹 Step 3: Convert response to speech
+     const speech = await openai.audio.speech.create({
+       model: 'tts-1',
+       voice: 'alloy',
+       input: aiResponse,
+       response_format: 'mp3'  // MP3 format only
+     });
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer());
     console.log(
@@ -101,21 +107,23 @@ export async function POST(request: NextRequest) {
         "X-AI-Response": encodeURIComponent(aiResponse),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("VR Audio Processing error:", error);
 
-    if (error.message?.includes("quota") || error.message?.includes("429")) {
-      return NextResponse.json(
-        { error: "OpenAI API quota exceeded. Please try again later." },
-        { status: 429 }
-      );
-    }
+    if (error instanceof Error) {
+      if (error.message.includes("quota") || error.message.includes("429")) {
+        return NextResponse.json(
+          { error: "OpenAI API quota exceeded. Please try again later." },
+          { status: 429 }
+        );
+      }
 
-    if (error.message?.includes("file_size_exceeded")) {
-      return NextResponse.json(
-        { error: "Audio file too large. Please use a smaller file." },
-        { status: 413 }
-      );
+      if (error.message.includes("file_size_exceeded")) {
+        return NextResponse.json(
+          { error: "Audio file too large. Please use a smaller file." },
+          { status: 413 }
+        );
+      }
     }
 
     return NextResponse.json(
