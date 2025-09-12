@@ -8,9 +8,10 @@ const UpsertBody = z.object({
 });
 
 // POST /api/orgs/:orgId/memberships  → add/update a member
-export async function POST(req: NextRequest, { params }: { params: { orgId: string }}) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ orgId: string }> }) {
   const token = (req.headers.get('authorization') || '').replace('Bearer ', '');
   const sb = supabaseFromToken(token);
+  const { orgId } = await params;
 
   const parsed = UpsertBody.safeParse(await req.json());
   if (!parsed.success) {
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
   }
 
   const { error } = await sb.from('memberships').upsert({
-    org_id: params.orgId,
+    org_id: orgId,
     user_id: parsed.data.userId,
     role: parsed.data.role
   });
@@ -28,9 +29,10 @@ export async function POST(req: NextRequest, { params }: { params: { orgId: stri
 }
 
 // DELETE /api/orgs/:orgId/memberships?userId=UUID  → remove member
-export async function DELETE(req: NextRequest, { params }: { params: { orgId: string }}) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ orgId: string }> }) {
   const token = (req.headers.get('authorization') || '').replace('Bearer ', '');
   const sb = supabaseFromToken(token);
+  const { orgId } = await params;
 
   const url = new URL(req.url);
   const userId = url.searchParams.get('userId');
@@ -38,7 +40,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { orgId: st
 
   const { error } = await sb.from('memberships')
     .delete()
-    .eq('org_id', params.orgId)
+    .eq('org_id', orgId)
     .eq('user_id', userId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

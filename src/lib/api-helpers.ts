@@ -12,15 +12,15 @@ export async function getUserAndClient(req: NextRequest) {
   const sb = supabaseFromToken(token);
   const { data, error } = await sb.auth.getUser();
   if (error || !data?.user) {
-    return { user: null as any, sb, unauthorized: true as const };
+    return { user: null, sb, unauthorized: true as const };
   }
   return { user: data.user, sb, unauthorized: false as const };
 }
 
-export function okJSON(payload: any, status = 200) {
+export function okJSON(payload: unknown, status = 200) {
   return NextResponse.json(payload, { status });
 }
-export function badRequestJSON(message: any) {
+export function badRequestJSON(message: unknown) {
   return NextResponse.json({ error: message }, { status: 400 });
 }
 export function unauthorizedJSON() {
