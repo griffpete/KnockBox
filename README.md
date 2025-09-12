@@ -25,8 +25,8 @@ This Next.js API-only server provides:
 - `POST /vr/audio` - Complete VR audio workflow (audio in → audio out)
   - **Input:** Audio file (.wav, .mp3) + sessionId + userId
   - **Output:** AI-generated audio response (.mp3 format)
-  - **Process:** Transcribe → AI Response → Text-to-Speech
-  - **Headers:** X-Transcript, X-AI-Response (for debugging)
+  - **Process:** Transcribe → AI Response → Text-to-Speech (OPTIMIZED FOR SPEED)
+  - **Headers:** X-Transcript, X-AI-Response, X-Processing-Time, X-Optimized (for debugging)
 
 ### AI Chatbot (Alternative Text Interface)
 - `POST /vr/chatbot` - Send text message to OpenAI-powered chatbot
@@ -132,14 +132,22 @@ curl -X POST https://your-api.vercel.app/vr/audio \
 
 ### Workflow
 1. **VR System** records user speech
-2. **POST /vr/audio** processes the audio:
-   - 🎤 Transcribes speech to text (Whisper)
-   - 🤖 Generates AI customer response (GPT-3.5)
-   - 🔊 Converts response to speech (TTS)
-   - 💾 Saves conversation history
+2. **POST /vr/audio** processes the audio (OPTIMIZED):
+   - 🎤 Transcribes speech to text (Whisper-1, fastest model)
+   - 🤖 Generates AI customer response (GPT-3.5, 50 tokens max, short context)
+   - 🔊 Converts response to speech (TTS-1, fastest voice)
+   - 💾 Saves conversation history (asynchronous, non-blocking)
 3. **VR System** receives audio response and plays it
 
 **Single API Call** - No need for multiple endpoints!
+
+### Performance Optimizations
+- **Parallel Processing**: Transcription and conversation history fetch in parallel
+- **Limited Context**: Only last 3 conversations (6 messages) for faster LLM processing
+- **Short Responses**: Max 50 tokens for natural, quick customer reactions
+- **Fast Models**: Whisper-1 + GPT-3.5-turbo + TTS-1 (all fastest available)
+- **Async DB**: Database saves don't block response
+- **Performance Monitoring**: Built-in timing headers for debugging
 
 ### Session Management
 - Use consistent `sessionId` for conversation continuity
