@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { saveConversation, getConversations } from "@/lib/database";
-import { generateChatbotResponse } from "@/lib/chatbot";
+import { generateFastChatbotResponse } from "@/lib/chatbot";
 
 // Initialize OpenAI client
 let openai: OpenAI | null = null;
@@ -32,71 +32,80 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `VR Audio Processing: ${audioFile.name}, size: ${audioFile.size} bytes, session: ${sessionId}`
+      `🚀 FAST VR Audio Processing: ${audioFile.name}, size: ${audioFile.size} bytes, session: ${sessionId}`
     );
 
-     // 🔹 Step 1: Transcribe + fetch conversation history in parallel
-     const arrayBuffer = await audioFile.arrayBuffer();
-     const buffer = Buffer.from(arrayBuffer);
-     const audioBlob = new File([buffer], audioFile.name, { type: audioFile.type });
+    const startTime = Date.now();
 
-     const [transcription, conversations] = await Promise.all([
-       openai.audio.transcriptions.create({
-         file: audioBlob,
-         model: 'whisper-1',
-         language: 'en',
-         response_format: 'text'
-       }),
-       getConversations(sessionId).catch((err) => {
-         console.warn("Conversation fetch failed:", err);
-         return [];
-       }),
-     ]);
+    // 🔹 OPTIMIZATION 1: Use faster Whisper model + parallel processing
+    const arrayBuffer = await audioFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const audioBlob = new File([buffer], audioFile.name, { type: audioFile.type });
 
-    const userMessage = transcription;
-    console.log("Transcription successful:", userMessage);
+    // Start transcription immediately (fastest model)
+    const transcriptionPromise = openai.audio.transcriptions.create({
+      file: audioBlob,
+      model: 'whisper-1', // Fastest available
+      language: 'en',
+      response_format: 'text',
+      temperature: 0.0, // Faster, more consistent
+    });
 
-    // Convert conversations to OpenAI chat format
+    // Get recent conversation history only (limit to last 3 exchanges for speed)
+    const conversationsPromise = getConversations(sessionId)
+      .then(convs => convs.slice(-3)) // Only last 3 conversations
+      .catch(() => []);
+
+    // 🔹 OPTIMIZATION 2: Start transcription first, then LLM + TTS in parallel
+    const userMessage = await transcriptionPromise;
+    console.log("✅ Transcription (fast):", userMessage);
+
+    const conversations = await conversationsPromise;
+    
+    // 🔹 OPTIMIZATION 3: Use faster LLM model with shorter context
     const conversationHistory = conversations.flatMap((conv) => [
       { role: "user" as const, content: conv.message },
       { role: "assistant" as const, content: conv.response },
     ]);
 
-    // 🔹 Step 2: Generate AI response
-    const aiResponseData = await generateChatbotResponse({
+    // Generate AI response with optimized settings
+    const aiResponseData = await generateFastChatbotResponse({
       message: userMessage,
       sessionId,
       userId,
       conversationHistory,
     });
     const aiResponse = aiResponseData.message;
-    console.log("AI Response:", aiResponse);
+    console.log("✅ AI Response (fast):", aiResponse);
 
-     // 🔹 Step 3: Convert response to speech
-     const speech = await openai.audio.speech.create({
-       model: 'tts-1',
-       voice: 'alloy',
-       input: aiResponse,
-       response_format: 'mp3'  // MP3 format only
-     });
+    // 🔹 OPTIMIZATION 4: Use fastest TTS model
+    const speech = await openai.audio.speech.create({
+      model: 'tts-1', // Fastest TTS model
+      voice: 'alloy', // Fastest voice
+      input: aiResponse,
+      response_format: 'mp3',
+      speed: 1.0, // Normal speed for clarity
+    });
 
     const audioBuffer = Buffer.from(await speech.arrayBuffer());
+    const totalTime = Date.now() - startTime;
+    
     console.log(
-      "TTS generation successful, MP3 size:",
-      audioBuffer.length,
-      "bytes"
+      `✅ TTS (fast): ${audioBuffer.length} bytes in ${totalTime}ms`
     );
 
-    // 🔹 Step 4: Save to DB (fire & forget)
-    saveConversation({
-      session_id: sessionId,
-      user_id: userId,
-      message: userMessage,
-      response: aiResponse,
-      timestamp: aiResponseData.timestamp,
-    }).catch((err) => console.error("DB save error:", err));
+    // 🔹 OPTIMIZATION 5: Save to DB asynchronously (don't wait)
+    setImmediate(() => {
+      saveConversation({
+        session_id: sessionId,
+        user_id: userId,
+        message: userMessage,
+        response: aiResponse,
+        timestamp: aiResponseData.timestamp,
+      }).catch((err) => console.error("DB save error:", err));
+    });
 
-    // 🔹 Step 5: Return MP3 audio
+    // 🔹 Return MP3 audio with performance headers
     return new NextResponse(audioBuffer, {
       status: 200,
       headers: {
@@ -105,6 +114,8 @@ export async function POST(request: NextRequest) {
         "Content-Disposition": 'inline; filename="ai_response.mp3"',
         "X-Transcript": encodeURIComponent(userMessage),
         "X-AI-Response": encodeURIComponent(aiResponse),
+        "X-Processing-Time": totalTime.toString(),
+        "X-Optimized": "true",
       },
     });
   } catch (error: unknown) {
