@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { saveConversation, getConversations } from '@/lib/database';
 import { generateChatbotResponse } from '@/lib/chatbot';
 
+
 // Initialize OpenAI client
 let openai: OpenAI | null = null;
 if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.includes('placeholder')) {
@@ -78,20 +79,16 @@ export async function POST(request: NextRequest) {
 
     console.log('AI Response generated:', aiResponse);
 
-    // Step 4: Convert AI response to speech
+    // Step 4: Convert AI response to speech (MP3 format)
     const speech = await openai.audio.speech.create({
       model: 'tts-1',
       voice: 'alloy',
       input: aiResponse,
-      response_format: 'mp3'  // OpenAI only supports MP3, not WAV
+      response_format: 'mp3'  // MP3 format only
     });
 
-    const mp3Buffer = Buffer.from(await speech.arrayBuffer());
-    console.log('TTS generation successful, MP3 buffer size:', mp3Buffer.length);
-
-    // Step 4.5: Convert MP3 to WAV format for Unity compatibility
-    // For now, return MP3 with proper headers - Unity can handle MP3
-    const audioBuffer = mp3Buffer;
+    const audioBuffer = Buffer.from(await speech.arrayBuffer());
+    console.log('TTS generation successful, MP3 buffer size:', audioBuffer.length);
 
     // Step 5: Save conversation to memory/database
     try {
