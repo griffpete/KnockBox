@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { saveConversation, getConversations } from '@/lib/database';
+import { generateChatbotResponse } from '@/lib/chatbot';
 
 // Initialize OpenAI client
 let openai: OpenAI | null = null;
@@ -66,57 +67,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Generate AI response using existing chatbot logic
-    const SYSTEM_PROMPT = `ROLE: You are a CUSTOMER who just opened your door to a door-to-door salesperson. You are NOT the salesperson.
-
-CRITICAL INSTRUCTIONS:
-- You are the CUSTOMER, NOT the salesperson
-- The person talking to you is trying to sell you something
-- You respond as a customer would - with questions, objections, or interest
-- You NEVER pitch products or act like a salesperson
-- You are always the person who opened the door
-
-CUSTOMER RESPONSES (examples):
-- "Oh, hi. What is this about?"
-- "I'm not really interested right now"
-- "How much does it cost?"
-- "I need to think about it"
-- "Do you have any references?"
-- "I'm busy right now, can you come back later?"
-
-FORBIDDEN: Never respond as a salesperson. Never pitch products. Never say "I'm here to tell you about..." or "Would you be interested in...". You are always the customer.`;
-
-    const messages = [
-      {
-        role: 'system' as const,
-        content: SYSTEM_PROMPT,
-      },
-      ...conversationHistory,
-      {
-        role: 'user' as const,
-        content: `[CONTEXT: You are a customer who just opened your door. A salesperson is talking to you. The salesperson said: "${transcription}"]`,
-      },
-    ];
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages,
-      max_tokens: 150,
-      temperature: 0.8,
+    const aiResponseData = await generateChatbotResponse({
+      message: transcription,
+      sessionId,
+      userId,
+      conversationHistory,
     });
 
-    const aiResponse = completion.choices[0]?.message?.content || 'I need to think about that.';
+    const aiResponse = aiResponseData.message;
 
     console.log('AI Response generated:', aiResponse);
 
     // Step 4: Convert AI response to speech
-    const mp3 = await openai.audio.speech.create({
+    const speech = await openai.audio.speech.create({
       model: 'tts-1',
       voice: 'alloy',
       input: aiResponse,
-      response_format: 'mp3'
+      response_format: 'wav'  // Changed to WAV format for VR compatibility
     });
 
-    const audioBuffer = Buffer.from(await mp3.arrayBuffer());
+    const audioBuffer = Buffer.from(await speech.arrayBuffer());
 
     console.log('TTS generation successful, buffer size:', audioBuffer.length);
 
@@ -127,7 +97,7 @@ FORBIDDEN: Never respond as a salesperson. Never pitch products. Never say "I'm 
         user_id: userId,
         message: transcription,
         response: aiResponse,
-        timestamp: new Date().toISOString()
+        timestamp: aiResponseData.timestamp
       });
     } catch (dbError) {
       console.error('Database error:', dbError);
@@ -138,9 +108,9 @@ FORBIDDEN: Never respond as a salesperson. Never pitch products. Never say "I'm 
     return new NextResponse(audioBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'audio/wav',
         'Content-Length': audioBuffer.length.toString(),
-        'Content-Disposition': 'inline; filename="vr-response.mp3"',
+        'Content-Disposition': 'attachment; filename="ai_response.wav"',
         'X-Transcript': transcription,
         'X-AI-Response': aiResponse
       }
