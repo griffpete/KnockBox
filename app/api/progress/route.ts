@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     // Fetch user progress from Supabase
     const progress = await getUserProgress(userId);
-    
+
     if (!progress) {
       // Return default progress if user doesn't exist
       return NextResponse.json({
