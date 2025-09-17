@@ -11,7 +11,8 @@ export async function GET() {
       aiChatbot: 'POST /vr/chatbot',
       progress: 'GET /progress',
       sessions: 'GET /sessions',
-      vrAudio: 'POST /vr/audio'
+      vrAudio: 'POST /vr/audio',
+      realtimeToken: 'POST /vr/realtime-token'
     },
     documentation: 'See README.md for detailed API documentation'
   });

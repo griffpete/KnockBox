@@ -32,6 +32,11 @@ This Next.js API-only server provides:
 - `POST /vr/chatbot` - Send text message to OpenAI-powered chatbot
 - `GET /vr/chatbot?sessionId=xxx&userId=xxx` - Get conversation history
 
+### OpenAI Realtime API Integration
+- `POST /vr/realtime-token` - Generate ephemeral token for VR realtime communication
+- `GET /vr/realtime-status?sessionId=xxx&userId=xxx` - Check realtime session status
+- `POST /vr/realtime-status` - Manage realtime session lifecycle
+
 ### Progress Tracking
 - `GET /progress?userId=xxx` - Get user progress
 - `POST /progress` - Save session data and update progress
@@ -120,6 +125,30 @@ The API will be available at `http://localhost:3000`
 
 ### Primary VR Endpoint
 Use `POST /vr/audio` for the complete audio workflow:
+
+### Realtime VR Integration
+For real-time voice interaction, use the OpenAI Realtime API:
+
+1. **Get Ephemeral Token:**
+   ```bash
+   POST /vr/realtime-token
+   {
+     "sessionId": "vr-session-1",
+     "userId": "user-123",
+     "voice": "alloy"  // optional: alloy, echo, fable, onyx, nova, shimmer
+   }
+   ```
+
+2. **Establish WebRTC Connection:**
+   - URL: `https://api.openai.com/v1/realtime`
+   - Use the ephemeral token from step 1
+   - Create data channel named `oai-events`
+   - Send audio in PCM16 format
+
+3. **Real-time Communication:**
+   - Send audio via WebRTC data channel
+   - Receive real-time AI responses
+   - Automatic turn detection and interruption handling
 
 ```bash
 curl -X POST https://your-api.vercel.app/vr/audio \
